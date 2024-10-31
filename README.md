@@ -4,7 +4,8 @@
 
 1. Create a directory format. Discuss together how you want to setup the project structure. 
 - There are many ways to set this up, a common way is to have an App folder that holds your 'client' directory (front end directory) and a 'server' directory (nodejs directory)
-- both of these will be separate run environments and they should depend on each other for a functioning app (the next project will include docker so that you don't have to manually start these environments)
+- both of these will be separate run environments and they should depend on each other for a functioning app
+  
 
 ## Front-end: 
 
