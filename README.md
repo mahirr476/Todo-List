@@ -98,6 +98,8 @@ You'll need to integrate with the following API endpoints:
 
 ## Database Structure
 
+
+MySql setup: 
 ### User Table
 ```sql
 CREATE TABLE users (
@@ -120,6 +122,8 @@ CREATE TABLE todos (
 );
 ```
 
+## BONUS: Postgre setup: 
+### [Postgre instructions](Postgre_Bonus.md)
 
 ## Implementation Requirements
 
