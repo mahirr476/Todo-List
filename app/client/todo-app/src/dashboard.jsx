@@ -30,6 +30,7 @@ const Dashboard = () => {
 
       <div className="p-6">
         <h1 className="text-3xl font-semibold text-gray-800 mb-4">Dashboard - Todo List</h1>
+        <p>Dashboard page</p>
 
         <div className="mb-4">
           <input
