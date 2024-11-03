@@ -23,6 +23,7 @@ function Login() {
       );
       localStorage.setItem("token", res.data.access_token);
       navigate("/dashboard");
+      console.log(res);
     } catch (error) {
       alert("wrong credential")
       console.error("Login failed:", error);
