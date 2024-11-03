@@ -2,11 +2,14 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
+  const { toast } = useToast();
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
@@ -23,6 +26,10 @@ function Login() {
         "https://api.escuelajs.co/api/v1/auth/login",
         { email, password }
       );
+      toast({
+        title: "Login",
+        description: "Logged in successfully",
+      });
       localStorage.setItem("token", res.data.access_token);
       router.push("/dashboard");
     } catch (error) {

@@ -1,18 +1,25 @@
 "use client";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+
 const LogoutButton = () => {
   const router = useRouter();
+  const { toast } = useToast();
+
   const handleLogout = () => {
     localStorage.removeItem("token");
+    toast({
+      title: "Logout",
+      description: "Logged out successfully",
+    });
     router.push("/login");
   };
+
   return (
-    <button
-      onClick={handleLogout}
-      className="mt-4 px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition duration-300"
-    >
+    <Button onClick={handleLogout}>
       Logout
-    </button>
+    </Button>
   );
 };
 
