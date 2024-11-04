@@ -1,6 +1,7 @@
 "use client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import Link from "next/link"; // Import the Link component from Next.js
 import { useState } from "react";
 
 const Register = () => {
@@ -16,7 +17,6 @@ const Register = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Implement registration logic
     console.log("Form submitted", form);
   };
 
@@ -51,6 +51,12 @@ const Register = () => {
         <Button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
           Register
         </Button>
+        <p className="mt-4 text-center">
+          Already have an account?{' '}
+          <Link href="/login" className="text-blue-600 hover:underline">
+            Login
+          </Link>
+        </p>
       </form>
     </div>
   );
