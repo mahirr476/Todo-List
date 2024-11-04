@@ -36,7 +36,7 @@ function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-900 via-pink-700 to-indigo-900">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-600 via-blue-600 to-yellow-600">
       <form onSubmit={handleLogin} className="bg-white p-10 rounded-lg shadow-lg w-full max-w-md space-y-6">
         <h2 className="text-4xl font-extrabold text-center text-purple-800 mb-6">Login</h2>
         <input

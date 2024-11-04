@@ -66,9 +66,9 @@ const Dashboard = () => {
 
           {/* Todo List */}
           <ul className="space-y-3">
-            {todos.map((todo, index) => (
+            {todos.map((todo) => (
               <li
-                key={index}
+                key={todo.id}
                 className={`flex items-center justify-between p-3 rounded-lg bg-gray-50 shadow-md ${
                   todo.completed ? "line-through text-gray-500" : ""
                 } transition-all duration-300`}
