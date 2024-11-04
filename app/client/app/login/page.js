@@ -22,7 +22,12 @@ function Login() {
     e.preventDefault();
     try {
       const res = await axios.post("https://api.escuelajs.co/api/v1/auth/login", { email, password });
-      toast({ title: "Login", description: "Logged in successfully" });
+      toast({
+        title: "Welcome back!",
+        description: "Successfully logged in",
+      })
+
+     
       localStorage.setItem("token", res.data.access_token);
       router.push("/dashboard");
     } catch (error) {

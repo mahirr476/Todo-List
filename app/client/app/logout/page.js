@@ -10,9 +10,9 @@ const LogoutButton = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     toast({
-      title: "Logout",
-      description: "Logged out successfully",
-    });
+      title: "Goodbye!",
+      description: "Successfully logged out",
+    })
     router.push("/login");
   };
 
