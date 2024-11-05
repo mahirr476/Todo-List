@@ -13,7 +13,7 @@ const Navbar = () => {
         <li>
           <Link
             href="/dashboard"
-            className={`p-2 rounded ${pathname === "/dashboard" ? "bg-blue-100 font-bold text-red-600" : ""}`}
+            className={`p-2 rounded ${pathname === "/dashboard" ? "bg-blue-100 font-bold text-red-500" : ""}`}
           >
             Dashboard
           </Link>
@@ -21,7 +21,7 @@ const Navbar = () => {
         <li>
           <Link
             href="/settings"
-            className={`p-2 rounded ${pathname === "/settings" ? "bg-blue-100 font-bold text-red-600" : ""}`}
+            className={`p-2 rounded ${pathname === "/settings" ? "bg-blue-100 font-bold text-red-500" : ""}`}
           >
             Settings
           </Link>
