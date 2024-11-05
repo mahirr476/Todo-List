@@ -2,21 +2,18 @@
 
 import Link from "next/link";
 import LogoutButton from "../logout/page";
-import { useRouter } from "next/navigation"; 
+import { usePathname } from "next/navigation"; 
 
 const Navbar = () => {
-  const router = useRouter(); 
-
-
-  console.log("Current pathname:", router.pathname);
+  const pathname = usePathname(); // Use usePathname instead of useRouter
 
   return (
-    <nav className="p-4">
-      <ul className="flex space-x-6 justify-center">
+    <nav className="p-2">
+      <ul className="flex space-x-2 justify-center items-center">
         <li>
           <Link
             href="/dashboard"
-            className={`p-2 rounded ${router.pathname === "/dashboard" ? "bg-blue-100 font-bold text-red-600" : ""}`}
+            className={`p-2 rounded ${pathname === "/dashboard" ? "bg-blue-100 font-bold text-red-600" : ""}`}
           >
             Dashboard
           </Link>
@@ -24,7 +21,7 @@ const Navbar = () => {
         <li>
           <Link
             href="/settings"
-            className={`p-2 rounded ${router.pathname === "/settings" ? "bg-blue-100 font-bold text-red-600" : ""}`}
+            className={`p-2 rounded ${pathname === "/settings" ? "bg-blue-100 font-bold text-red-600" : ""}`}
           >
             Settings
           </Link>
