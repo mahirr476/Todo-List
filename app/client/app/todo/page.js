@@ -1,10 +1,10 @@
 "use client";
-import { useState, useEffect } from "react";
-import axios from "axios";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import axios from "axios";
+import { useEffect, useState } from "react";
 
 const TodoApp = () => {
   const [todos, setTodos] = useState([]);
@@ -19,7 +19,11 @@ const TodoApp = () => {
       .then((res) => setTodos(res.data))
       .catch((err) => {
         console.error(err);
-        toast({ title: "Error", description: "Failed to fetch todos", duration: 2000 });
+        toast({
+          title: "Error",
+          description: "Failed to fetch todos",
+          duration: 2000,
+        });
       });
   }, []);
 
@@ -31,34 +35,54 @@ const TodoApp = () => {
           `https://jsonplaceholder.typicode.com/todos/${currentTodoId}`,
           {
             title: newTodo,
-            completed: todos.find((todo) => todo.id === currentTodoId).completed,
+            completed: todos.find((todo) => todo.id === currentTodoId)
+              .completed,
           }
         );
         setTodos(todos.map((t) => (t.id === currentTodoId ? res.data : t)));
         setEditMode(false);
         setNewTodo("");
-        toast({ title: "Success!", description: "Todo updated successfully", duration: 2000 });
+        toast({
+          title: "Success!",
+          description: "Todo updated successfully",
+          duration: 2000,
+        });
       } catch (err) {
         console.error(err);
-        toast({ title: "Error", description: "Failed to update todo", duration: 2000 });
+        toast({
+          title: "Error",
+          description: "Failed to update todo",
+          duration: 2000,
+        });
       }
     } else {
       try {
-        const res = await axios.post("https://jsonplaceholder.typicode.com/todos", {
-          title: newTodo,
-          completed: false, // Initially setting completed to false
-        });
-        setTodos([res.data, ...todos]); // Add the new todo correctly
+        // Generate a unique ID for the new todo
+        const newId = todos.length
+          ? Math.max(...todos.map((todo) => todo.id)) + 1
+          : 1;
+        const newTodoItem = { id: newId, title: newTodo, completed: false };
+
+        // Optimistically update the todos list with the new item
+        setTodos([newTodoItem, ...todos]);
         setNewTodo("");
-        toast({ title: "Success!", description: "Todo added successfully", duration: 2000 });
+        toast({
+          title: "Success!",
+          description: "Todo added successfully",
+          duration: 2000,
+        });
       } catch (err) {
         console.error(err);
-        toast({ title: "Error", description: "Failed to add todo", duration: 2000 });
+        toast({
+          title: "Error",
+          description: "Failed to add todo",
+          duration: 2000,
+        });
       }
     }
   };
 
-  const editTodo = (id, title, completed) => {
+  const editTodo = (id, title) => {
     setEditMode(true);
     setNewTodo(title);
     setCurrentTodoId(id);
@@ -67,14 +91,21 @@ const TodoApp = () => {
   const toggleTodo = async (id) => {
     const todo = todos.find((todo) => todo.id === id);
     try {
-      const res = await axios.put(`https://jsonplaceholder.typicode.com/todos/${id}`, {
-        ...todo,
-        completed: !todo.completed,
-      });
+      const res = await axios.put(
+        `https://jsonplaceholder.typicode.com/todos/${id}`,
+        {
+          ...todo,
+          completed: !todo.completed,
+        }
+      );
       setTodos(todos.map((t) => (t.id === id ? res.data : t)));
     } catch (err) {
       console.error(err);
-      toast({ title: "Error", description: "Failed to toggle todo", duration: 2000 });
+      toast({
+        title: "Error",
+        description: "Failed to toggle todo",
+        duration: 2000,
+      });
     }
   };
 
@@ -82,17 +113,27 @@ const TodoApp = () => {
     try {
       await axios.delete(`https://jsonplaceholder.typicode.com/todos/${id}`);
       setTodos(todos.filter((todo) => todo.id !== id));
-      toast({ title: "Deleted", description: "Todo deleted successfully", duration: 2000 });
+      toast({
+        title: "Deleted",
+        description: "Todo deleted successfully",
+        duration: 2000,
+      });
     } catch (err) {
       console.error(err);
-      toast({ title: "Error", description: "Failed to delete todo", duration: 2000 });
+      toast({
+        title: "Error",
+        description: "Failed to delete todo",
+        duration: 2000,
+      });
     }
   };
 
   return (
     <div className="flex justify-center items-center">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-lg">
-        <h2 className="text-3xl font-semibold text-gray-800 mb-6 text-center">Todo List</h2>
+        <h2 className="text-3xl font-semibold text-gray-800 mb-6 text-center">
+          Todo List
+        </h2>
 
         <form onSubmit={handleTodo} className="flex mb-4">
           <Input
@@ -122,7 +163,10 @@ const TodoApp = () => {
               />
               <span className="flex-grow">{todo.title}</span>
               <div className="flex space-x-2">
-                <Button variant="outline" onClick={() => editTodo(todo.id, todo.title, todo.completed)}>
+                <Button
+                  variant="outline"
+                  onClick={() => editTodo(todo.id, todo.title)}
+                >
                   Edit
                 </Button>
                 <Button variant="outline" onClick={() => deleteTodo(todo.id)}>
