@@ -1,13 +1,13 @@
-"use client"; // Ensure this is a client component
+"use client"; 
 
 import Link from "next/link";
 import LogoutButton from "../logout/page";
-import { useRouter } from "next/navigation"; // Use the correct import for app directory
+import { useRouter } from "next/navigation"; 
 
 const Navbar = () => {
-  const router = useRouter(); // Get the router instance
+  const router = useRouter(); 
 
-  // Debug: Log the current pathname
+
   console.log("Current pathname:", router.pathname);
 
   return (
