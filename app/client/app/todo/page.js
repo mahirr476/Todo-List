@@ -17,7 +17,10 @@ const TodoApp = () => {
     axios
       .get("https://jsonplaceholder.typicode.com/todos?_limit=5")
       .then((res) => setTodos(res.data))
-      .catch((err) => console.error(err));
+      .catch((err) => {
+        console.error(err);
+        toast({ title: "Error", description: "Failed to fetch todos", duration: 2000 });
+      });
   }, []);
 
   const handleTodo = async (e) => {
@@ -37,23 +40,25 @@ const TodoApp = () => {
         toast({ title: "Success!", description: "Todo updated successfully", duration: 2000 });
       } catch (err) {
         console.error(err);
+        toast({ title: "Error", description: "Failed to update todo", duration: 2000 });
       }
     } else {
       try {
         const res = await axios.post("https://jsonplaceholder.typicode.com/todos", {
           title: newTodo,
-          completed: false,
+          completed: false, // Initially setting completed to false
         });
-        setTodos([res.data, ...todos]);
+        setTodos([res.data, ...todos]); // Add the new todo correctly
         setNewTodo("");
         toast({ title: "Success!", description: "Todo added successfully", duration: 2000 });
       } catch (err) {
         console.error(err);
+        toast({ title: "Error", description: "Failed to add todo", duration: 2000 });
       }
     }
   };
 
-  const editTodo = (id, title) => {
+  const editTodo = (id, title, completed) => {
     setEditMode(true);
     setNewTodo(title);
     setCurrentTodoId(id);
@@ -69,6 +74,7 @@ const TodoApp = () => {
       setTodos(todos.map((t) => (t.id === id ? res.data : t)));
     } catch (err) {
       console.error(err);
+      toast({ title: "Error", description: "Failed to toggle todo", duration: 2000 });
     }
   };
 
@@ -79,6 +85,7 @@ const TodoApp = () => {
       toast({ title: "Deleted", description: "Todo deleted successfully", duration: 2000 });
     } catch (err) {
       console.error(err);
+      toast({ title: "Error", description: "Failed to delete todo", duration: 2000 });
     }
   };
 
@@ -115,7 +122,7 @@ const TodoApp = () => {
               />
               <span className="flex-grow">{todo.title}</span>
               <div className="flex space-x-2">
-                <Button variant="outline" onClick={() => editTodo(todo.id, todo.title)}>
+                <Button variant="outline" onClick={() => editTodo(todo.id, todo.title, todo.completed)}>
                   Edit
                 </Button>
                 <Button variant="outline" onClick={() => deleteTodo(todo.id)}>
