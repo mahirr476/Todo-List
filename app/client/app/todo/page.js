@@ -4,12 +4,14 @@ import axios from "axios";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
 
 const TodoApp = () => {
   const [todos, setTodos] = useState([]);
   const [newTodo, setNewTodo] = useState("");
   const [editMode, setEditMode] = useState(false);
   const [currentTodoId, setCurrentTodoId] = useState(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     axios
@@ -18,31 +20,36 @@ const TodoApp = () => {
       .catch((err) => console.error(err));
   }, []);
 
-  const handleTodo = (e) => {
+  const handleTodo = async (e) => {
     e.preventDefault();
     if (editMode) {
-      axios
-        .put(`https://jsonplaceholder.typicode.com/todos/${currentTodoId}`, {
-          title: newTodo,
-          completed: todos.find((todo) => todo.id === currentTodoId).completed,
-        })
-        .then((res) => {
-          setTodos(todos.map((t) => (t.id === currentTodoId ? res.data : t)));
-          setEditMode(false);
-          setNewTodo("");
-        })
-        .catch((err) => console.error(err));
+      try {
+        const res = await axios.put(
+          `https://jsonplaceholder.typicode.com/todos/${currentTodoId}`,
+          {
+            title: newTodo,
+            completed: todos.find((todo) => todo.id === currentTodoId).completed,
+          }
+        );
+        setTodos(todos.map((t) => (t.id === currentTodoId ? res.data : t)));
+        setEditMode(false);
+        setNewTodo("");
+        toast({ title: "Success!", description: "Todo updated successfully", duration: 2000 });
+      } catch (err) {
+        console.error(err);
+      }
     } else {
-      axios
-        .post("https://jsonplaceholder.typicode.com/todos", {
+      try {
+        const res = await axios.post("https://jsonplaceholder.typicode.com/todos", {
           title: newTodo,
           completed: false,
-        })
-        .then((res) => {
-          setTodos([res.data, ...todos]);
-          setNewTodo("");
-        })
-        .catch((err) => console.error(err));
+        });
+        setTodos([res.data, ...todos]);
+        setNewTodo("");
+        toast({ title: "Success!", description: "Todo added successfully", duration: 2000 });
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
@@ -52,34 +59,33 @@ const TodoApp = () => {
     setCurrentTodoId(id);
   };
 
-  const toggleTodo = (id) => {
+  const toggleTodo = async (id) => {
     const todo = todos.find((todo) => todo.id === id);
-    axios
-      .put(`https://jsonplaceholder.typicode.com/todos/${id}`, {
+    try {
+      const res = await axios.put(`https://jsonplaceholder.typicode.com/todos/${id}`, {
         ...todo,
         completed: !todo.completed,
-      })
-      .then((res) => {
-        setTodos(todos.map((t) => (t.id === id ? res.data : t)));
-      })
-      .catch((err) => console.error(err));
+      });
+      setTodos(todos.map((t) => (t.id === id ? res.data : t)));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const deleteTodo = (id) => {
-    axios
-      .delete(`https://jsonplaceholder.typicode.com/todos/${id}`)
-      .then(() => {
-        setTodos(todos.filter((todo) => todo.id !== id));
-      })
-      .catch((err) => console.error(err));
+  const deleteTodo = async (id) => {
+    try {
+      await axios.delete(`https://jsonplaceholder.typicode.com/todos/${id}`);
+      setTodos(todos.filter((todo) => todo.id !== id));
+      toast({ title: "Deleted", description: "Todo deleted successfully", duration: 2000 });
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
-    <div className="flex justify-center items-center ">
+    <div className="flex justify-center items-center">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-lg">
-        <h2 className="text-3xl font-semibold text-gray-800 mb-6 text-center">
-          Todo List
-        </h2>
+        <h2 className="text-3xl font-semibold text-gray-800 mb-6 text-center">Todo List</h2>
 
         <form onSubmit={handleTodo} className="flex mb-4">
           <Input
@@ -89,11 +95,7 @@ const TodoApp = () => {
             onChange={(e) => setNewTodo(e.target.value)}
             className="mr-2 w-full"
           />
-          <Button
-            type="submit"
-            variant="default"
-            className=""
-          >
+          <Button type="submit" variant="default">
             {editMode ? "Update" : "Add"}
           </Button>
         </form>
@@ -113,18 +115,10 @@ const TodoApp = () => {
               />
               <span className="flex-grow">{todo.title}</span>
               <div className="flex space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={() => editTodo(todo.id, todo.title)}
-                  className=""
-                >
+                <Button variant="outline" onClick={() => editTodo(todo.id, todo.title)}>
                   Edit
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => deleteTodo(todo.id)}
-                  className=""
-                >
+                <Button variant="outline" onClick={() => deleteTodo(todo.id)}>
                   Delete
                 </Button>
               </div>
