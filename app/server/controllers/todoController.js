@@ -1,5 +1,5 @@
 // controllers/todoController.js
-const todoService = require('../services/todoService');
+const todoService = require('../services/todoServices');
 
 class TodoController {
     async create(req, res) {

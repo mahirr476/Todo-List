@@ -1,6 +1,6 @@
-// server.js (main file)
 const express = require('express');
 const dotenv = require('dotenv');
+const authenticateJWT = require('./middleware/authenticateJWT');
 dotenv.config();
 
 const userRoutes = require('./routes/userRoutes');

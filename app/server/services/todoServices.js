@@ -1,5 +1,5 @@
 // services/todoService.js
-const db = require('../config/database');
+const db = require('../config/db');
 
 class TodoService {
     async createTodo(title, userId) {

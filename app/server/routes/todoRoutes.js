@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const todoController = require('../controllers/todoController');
-const authenticateJWT = require('../middleware/auth');
+const authenticateJWT = require('../middleware/authenticateJWT');
 
 router.use(authenticateJWT);
 
