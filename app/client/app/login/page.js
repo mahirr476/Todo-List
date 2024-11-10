@@ -23,15 +23,14 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("https://api.escuelajs.co/api/v1/auth/login", { email, password });
+      const res = await axios.post("http://localhost:5000/api/login", { email, password });
       toast({
         title: "Welcome back!",
         description: "Successfully logged in",
       });
-
-      localStorage.setItem("token", res.data.access_token);
-      localStorage.setItem("userEmail", email); 
-      localStorage.setItem("userPassword", password); 
+      console.log("resp",res);
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("userEmail", email);  
 
       router.push("/dashboard");
     } catch (error) {

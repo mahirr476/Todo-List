@@ -12,33 +12,38 @@ export default function Settings() {
   const { toast } = useToast();
   const router = useRouter();
 
-
+  // States for email and password changes
   const [email, setEmail] = useState("");
+  const [newEmail, setNewEmail] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [userId, setUserId] = useState("");
 
- 
   useEffect(() => {
-    const userEmail = localStorage.getItem("userEmail"); 
-    if (userEmail) {
+    const userEmail = localStorage.getItem("userEmail");
+    const userId = localStorage.getItem("userId"); // Get the userId from localStorage
+
+    if (userEmail && userId) {
       setEmail(userEmail);
+      setNewEmail(userEmail); // Set initial email value
+      setUserId(userId); // Set userId state
     } else {
       toast({
         title: "Error",
         description: "User data not found. Please log in again.",
         variant: "destructive",
       });
-      router.push("/login"); 
+      router.push("/login"); // Redirect to login if user data is not found
     }
   }, [router, toast]);
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
 
-    // Validation: All fields required
+    // Check for required fields
     if (!currentPassword || !newPassword || !confirmPassword) {
       toast({
         title: "Error",
@@ -48,7 +53,6 @@ export default function Settings() {
       return;
     }
 
-    // Validation: New passwords match
     if (newPassword !== confirmPassword) {
       toast({
         title: "Error",
@@ -58,17 +62,56 @@ export default function Settings() {
       return;
     }
 
-    // Simulate successful save (replace with actual save logic)
-    toast({
-      title: "Success!",
-      description: "Changes saved successfully!",
-      variant: "success",
-    });
+    try {
+      if (!userId) {
+        toast({
+          title: "Error",
+          description: "User ID is missing.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    // Clear form fields after save
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+      const token = localStorage.getItem("token"); // Retrieve authToken from localStorage
+      const body = {
+        currentPassword,
+        newPassword,
+        email: newEmail, // Include the email change request
+      };
+
+      const response = await fetch(`http://localhost:5000/api/user/${userId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`, // Include token for authorization
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update user data");
+      }
+
+      toast({
+        title: "Success!",
+        description: "User data updated successfully.",
+        variant: "success",
+      });
+
+      // Clear the form fields after saving
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setNewEmail(newEmail); // Reset the new email after saving
+
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Something went wrong.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -86,12 +129,13 @@ export default function Settings() {
             Settings
           </h2>
           <form onSubmit={handleSave} className="space-y-4">
+            {/* Display and edit user email */}
             <Input
               type="email"
-              value={email}
-              placeholder="User Email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              placeholder="New Email"
               className="w-full"
-              readOnly
             />
             <div className="relative">
               <Input
@@ -115,7 +159,7 @@ export default function Settings() {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="New Password"
-                className="w-full pr-10" 
+                className="w-full pr-10"
               />
               <button
                 type="button"
