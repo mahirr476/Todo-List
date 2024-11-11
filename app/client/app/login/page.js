@@ -4,15 +4,16 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff } from "lucide-react"; 
+import { Eye, EyeOff } from "lucide-react";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); 
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   useEffect(() => {
     if (token) {
@@ -23,25 +24,45 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:5000/api/login", { email, password });
+      const res = await axios.post("http://localhost:5000/api/login", {
+        email,
+        password,
+      });
+
+      // Assuming the backend now sends both the token and user data
+      const { token, user } = res.data; // Get both token and user data
+
       toast({
         title: "Welcome back!",
         description: "Successfully logged in",
       });
-      console.log("resp",res);
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("userEmail", email);  
 
+      // Store token and user info in localStorage
+      localStorage.setItem("token", token);
+      localStorage.setItem("userEmail", email);
+      // localStorage.setItem("userPassword", password);
+      localStorage.setItem("userId", user.id); // Store user ID
+
+      // Redirect to dashboard
       router.push("/dashboard");
     } catch (error) {
-      toast({ title: "Login failed", description: "Incorrect credentials", variant: "destructive" });
+      toast({
+        title: "Login failed",
+        description: "Incorrect credentials",
+        variant: "destructive",
+      });
     }
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-600 via-blue-600 to-yellow-600">
-      <form onSubmit={handleLogin} className="bg-white p-10 rounded-lg shadow-lg w-full max-w-md space-y-6">
-        <h2 className="text-4xl font-extrabold text-center text-purple-800 mb-6">Login</h2>
+      <form
+        onSubmit={handleLogin}
+        className="bg-white p-10 rounded-lg shadow-lg w-full max-w-md space-y-6"
+      >
+        <h2 className="text-4xl font-extrabold text-center text-purple-800 mb-6">
+          Login
+        </h2>
         <input
           type="email"
           value={email}
@@ -52,7 +73,7 @@ function Login() {
         />
         <div className="relative">
           <input
-            type={showPassword ? "text" : "password"} 
+            type={showPassword ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Password"
@@ -61,7 +82,7 @@ function Login() {
           />
           <button
             type="button"
-            onClick={() => setShowPassword(!showPassword)} 
+            onClick={() => setShowPassword(!showPassword)}
             className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
           >
             {showPassword ? <EyeOff /> : <Eye />}

@@ -4,47 +4,51 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import Header from "../header/page"; // Adjust the path based on your structure
-import Navbar from "../navbar/page"; // Adjust the path based on your structure
-import { Eye, EyeOff } from "lucide-react"; // Import icons from lucide-react or any icon library
+import Header from "../header/page";
+import Navbar from "../navbar/page";
+import ProtectedRoute from "../protectedRoute/page";
 
 export default function Settings() {
   const { toast } = useToast();
   const router = useRouter();
 
-  // States for email and password changes
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [newEmail, setNewEmail] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [userId, setUserId] = useState("");
+  const [password, setPassword] = useState("");
 
   useEffect(() => {
+    // Fetch user details from localStorage or session storage
     const userEmail = localStorage.getItem("userEmail");
-    const userId = localStorage.getItem("userId"); // Get the userId from localStorage
-
-    if (userEmail && userId) {
+    const userName = localStorage.getItem("userName"); // Assuming name is stored in localStorage
+    if (userEmail) {
       setEmail(userEmail);
-      setNewEmail(userEmail); // Set initial email value
-      setUserId(userId); // Set userId state
+      setName(userName || ""); // Set name if available in localStorage
     } else {
       toast({
         title: "Error",
         description: "User data not found. Please log in again.",
         variant: "destructive",
       });
-      router.push("/login"); // Redirect to login if user data is not found
+      router.push("/login"); // Redirect if user is not logged in
     }
   }, [router, toast]);
 
   const handleSave = async (e) => {
     e.preventDefault();
 
-    // Check for required fields
-    if (!currentPassword || !newPassword || !confirmPassword) {
+    // Get the userId from localStorage or other source
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "User ID is missing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validation: Ensure all fields are filled
+    if (!name || !email || !password) {
       toast({
         title: "Error",
         description: "All fields are required!",
@@ -53,138 +57,108 @@ export default function Settings() {
       return;
     }
 
-    if (newPassword !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "New passwords do not match!",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
-      if (!userId) {
+      const token = localStorage.getItem("token");
+      if (!token) {
         toast({
           title: "Error",
-          description: "User ID is missing.",
+          description: "Authentication token is missing.",
           variant: "destructive",
         });
         return;
       }
 
-      const token = localStorage.getItem("token"); // Retrieve authToken from localStorage
-      const body = {
-        currentPassword,
-        newPassword,
-        email: newEmail, // Include the email change request
-      };
-
       const response = await fetch(`http://localhost:5000/api/user/${userId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`, // Include token for authorization
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+        }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update user data");
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Success!",
+          description: "User updated successfully.",
+          variant: "success",
+        });
+        localStorage.setItem("userEmail", email);
+        localStorage.setItem("userName", name);
+      } else {
+        toast({
+          title: "Error",
+          description: data.message || "Error updating user.",
+          variant: "destructive",
+        });
       }
-
-      toast({
-        title: "Success!",
-        description: "User data updated successfully.",
-        variant: "success",
-      });
-
-      // Clear the form fields after saving
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      setNewEmail(newEmail); // Reset the new email after saving
-
     } catch (error) {
       toast({
         title: "Error",
-        description: error.message || "Something went wrong.",
+        description: "An error occurred while updating user.",
         variant: "destructive",
       });
     }
+
+    setName("");
+    setEmail("");
+    setPassword("");
   };
 
   return (
     <>
-      <header className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 shadow-lg fixed top-0 left-0 right-0 z-10">
-        <div className="container mx-auto flex justify-between items-center">
-          <Header />
-          <Navbar />
-        </div>
-      </header>
+      {" "}
+      <ProtectedRoute>
+        <header className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 shadow-lg fixed top-0 left-0 right-0 z-10">
+          <div className="container mx-auto flex justify-between items-center">
+            <Header />
+            <Navbar />
+          </div>
+        </header>
 
-      <main className="flex justify-center items-center min-h-screen bg-gray-100 pt-20">
-        <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
-            Settings
-          </h2>
-          <form onSubmit={handleSave} className="space-y-4">
-            {/* Display and edit user email */}
-            <Input
-              type="email"
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              placeholder="New Email"
-              className="w-full"
-            />
-            <div className="relative">
+        <main className="flex justify-center items-center min-h-screen bg-gray-100 pt-20">
+          <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
+              Settings
+            </h2>
+            <form onSubmit={handleSave} className="space-y-4">
               <Input
-                type={showCurrentPassword ? "text" : "password"}
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="Current Password"
-                className="w-full pr-10" // Add padding for the icon
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="User Name"
+                className="w-full"
               />
-              <button
-                type="button"
-                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
-              >
-                {showCurrentPassword ? <EyeOff /> : <Eye />}
-              </button>
-            </div>
-            <div className="relative">
               <Input
-                type={showNewPassword ? "text" : "password"}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="New Password"
-                className="w-full pr-10"
+                type="email"
+                value={email}
+                placeholder="User Email"
+                className="w-full"
+                readOnly
               />
-              <button
-                type="button"
-                onClick={() => setShowNewPassword(!showNewPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                className="w-full"
+              />
+              <Button
+                type="submit"
+                className="bg-blue-500 text-white w-full mt-4"
               >
-                {showNewPassword ? <EyeOff /> : <Eye />}
-              </button>
-            </div>
-            <Input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm New Password"
-              className="w-full"
-            />
-            <Button
-              type="submit"
-              className="bg-blue-500 text-white w-full mt-4"
-            >
-              Save Changes
-            </Button>
-          </form>
-        </div>
-      </main>
+                Save Changes
+              </Button>
+            </form>
+          </div>
+        </main>
+      </ProtectedRoute>
     </>
   );
 }
