@@ -47,11 +47,13 @@ const Register = () => {
           value={form.name}
           onChange={handleChange}
           className="mb-4"
+          required
         />
         <Input
           type="email"
           name="email"
           placeholder="Email"
+          required
           value={form.email}
           onChange={handleChange}
           className="mb-4"
@@ -60,6 +62,7 @@ const Register = () => {
           type="password"
           name="password"
           placeholder="Password"
+          required
           value={form.password}
           onChange={handleChange}
           className="mb-6"

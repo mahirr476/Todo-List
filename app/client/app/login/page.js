@@ -68,6 +68,7 @@ function Login() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email"
+          required
           className="w-full px-5 py-3 mb-4 border rounded-lg focus:outline-none focus:ring-4 focus:ring-purple-500 transition duration-300"
           style={{ boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)" }}
         />
@@ -75,6 +76,7 @@ function Login() {
           <input
             type={showPassword ? "text" : "password"}
             value={password}
+            required
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Password"
             className="w-full px-5 py-3 mb-4 border rounded-lg focus:outline-none focus:ring-4 focus:ring-purple-500 transition duration-300 pr-10" // Add padding for the icon
