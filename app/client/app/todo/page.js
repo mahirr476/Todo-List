@@ -13,72 +13,69 @@ const TodoApp = () => {
   const [currentTodoId, setCurrentTodoId] = useState(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    axios
-      .get("https://jsonplaceholder.typicode.com/todos?_limit=5")
-      .then((res) => setTodos(res.data))
-      .catch((err) => {
-        console.error(err);
-        toast({
-          title: "Error",
-          description: "Failed to fetch todos",
-          duration: 2000,
-        });
+  const fetchTodos = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get("http://localhost:5000/api/todos", {
+        headers: { Authorization: `Bearer ${token}` },
       });
+      setTodos(res.data);
+    } catch (err) {
+      console.error("Failed to fetch todos:", err);
+      toast({
+        title: "Error",
+        description: "Failed to fetch todos. Please check the server or API endpoint.",
+        duration: 2000,
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchTodos();
   }, []);
 
   const handleTodo = async (e) => {
     e.preventDefault();
-    if (editMode) {
-      try {
-        const res = await axios.put(
-          `https://jsonplaceholder.typicode.com/todos/${currentTodoId}`,
-          {
-            title: newTodo,
-            completed: todos.find((todo) => todo.id === currentTodoId)
-              .completed,
-          }
-        );
-        setTodos(todos.map((t) => (t.id === currentTodoId ? res.data : t)));
-        setEditMode(false);
-        setNewTodo("");
-        toast({
-          title: "Success!",
-          description: "Todo updated successfully",
-          duration: 2000,
-        });
-      } catch (err) {
-        console.error(err);
-        toast({
-          title: "Error",
-          description: "Failed to update todo",
-          duration: 2000,
-        });
-      }
-    } else {
-      try {
-        // Generate a unique ID for the new todo
-        const newId = todos.length
-          ? Math.max(...todos.map((todo) => todo.id)) + 1
-          : 1;
-        const newTodoItem = { id: newId, title: newTodo, completed: false };
+    const token = localStorage.getItem("token");
+    const todoData = {
+      title: newTodo,
+      completed: editMode
+        ? todos.find((todo) => todo.id === currentTodoId).completed
+        : false,
+    };
 
-        // Optimistically update the todos list with the new item
-        setTodos([newTodoItem, ...todos]);
-        setNewTodo("");
-        toast({
-          title: "Success!",
-          description: "Todo added successfully",
-          duration: 2000,
-        });
-      } catch (err) {
-        console.error(err);
-        toast({
-          title: "Error",
-          description: "Failed to add todo",
-          duration: 2000,
-        });
+    try {
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      if (editMode) {
+        setTodos((prevTodos) =>
+          prevTodos.map((t) =>
+            t.id === currentTodoId ? { ...t, title: newTodo } : t
+          )
+        );
+        
+        const res = await axios.put(
+          `http://localhost:5000/api/todos/${currentTodoId}`,
+          todoData,
+          config
+        );
+        setEditMode(false);
+      } else {
+        const res = await axios.post("http://localhost:5000/api/todos", todoData, config);
+        setTodos((prevTodos) => [res.data, ...prevTodos]);
       }
+      setNewTodo("");
+      toast({
+        title: "Success!",
+        description: editMode ? "Todo updated successfully" : "Todo added successfully",
+        duration: 2000,
+      });
+    } catch (err) {
+      console.error("Failed to save todo:", err);
+      toast({
+        title: "Error",
+        description: "Failed to save todo. Please try again.",
+        duration: 2000,
+      });
     }
   };
 
@@ -90,39 +87,46 @@ const TodoApp = () => {
 
   const toggleTodo = async (id) => {
     const todo = todos.find((todo) => todo.id === id);
+    const token = localStorage.getItem("token");
     try {
-      const res = await axios.put(
-        `https://jsonplaceholder.typicode.com/todos/${id}`,
-        {
-          ...todo,
-          completed: !todo.completed,
-        }
+      setTodos((prevTodos) =>
+        prevTodos.map((t) =>
+          t.id === id ? { ...t, completed: !todo.completed } : t
+        )
       );
-      setTodos(todos.map((t) => (t.id === id ? res.data : t)));
+
+      const res = await axios.put(
+        `http://localhost:5000/api/todos/${id}`,
+        { ...todo, completed: !todo.completed },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
     } catch (err) {
-      console.error(err);
+      console.error("Failed to toggle todo:", err);
       toast({
         title: "Error",
-        description: "Failed to toggle todo",
+        description: "Failed to toggle todo. Please try again.",
         duration: 2000,
       });
     }
   };
 
   const deleteTodo = async (id) => {
+    const token = localStorage.getItem("token");
     try {
-      await axios.delete(`https://jsonplaceholder.typicode.com/todos/${id}`);
-      setTodos(todos.filter((todo) => todo.id !== id));
+      await axios.delete(`http://localhost:5000/api/todos/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setTodos((prevTodos) => prevTodos.filter((todo) => todo.id !== id));
       toast({
         title: "Deleted",
         description: "Todo deleted successfully",
         duration: 2000,
       });
     } catch (err) {
-      console.error(err);
+      console.error("Failed to delete todo:", err);
       toast({
         title: "Error",
-        description: "Failed to delete todo",
+        description: "Failed to delete todo. Please try again.",
         duration: 2000,
       });
     }
@@ -148,34 +152,46 @@ const TodoApp = () => {
           </Button>
         </form>
 
-        <ul className="space-y-3">
-          {todos.map((todo) => (
-            <li
-              key={todo.id}
-              className={`flex items-center justify-between p-3 rounded-lg border bg-gray-50 shadow-sm ${
-                todo.completed ? "line-through text-gray-500" : ""
-              }`}
-            >
-              <Checkbox
-                checked={todo.completed}
-                onCheckedChange={() => toggleTodo(todo.id)}
-                className="mr-3"
-              />
-              <span className="flex-grow">{todo.title}</span>
-              <div className="flex space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={() => editTodo(todo.id, todo.title)}
+        {todos.length === 0 ? (
+          <div className="text-center text-gray-500">There are no todo items</div>
+        ) : (
+          <ul className="space-y-3">
+            {todos.map((todo) => (
+              <li
+                key={todo.id}
+                className="flex items-center justify-between p-3 rounded-lg border bg-gray-50 shadow-sm"
+              >
+                <Checkbox
+                  checked={todo.completed}
+                  onCheckedChange={() => toggleTodo(todo.id)}
+                  className="mr-3"
+                />
+                <span
+                  className={`flex-grow ${todo.completed ? "line-through text-gray-500" : ""}`}
                 >
-                  Edit
-                </Button>
-                <Button variant="outline" onClick={() => deleteTodo(todo.id)}>
-                  Delete
-                </Button>
-              </div>
-            </li>
-          ))}
-        </ul>
+                  {todo.title}
+                </span>
+                <div className="flex space-x-2">
+                  {!todo.completed && (
+                    <Button
+                      variant="outline"
+                      onClick={() => editTodo(todo.id, todo.title)}
+                    >
+                      Edit
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    onClick={() => deleteTodo(todo.id)}
+                    className={todo.completed ? "text-gray-400" : ""}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );

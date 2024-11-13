@@ -1,12 +1,16 @@
+
 "use client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import Link from "next/link"; // Import the Link component from Next.js
+import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import axios from "axios";
 
 const Register = () => {
+  const router = useRouter();
   const [form, setForm] = useState({
-    username: "",
+    name: "",
     email: "",
     password: "",
   });
@@ -15,9 +19,21 @@ const Register = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted", form);
+    try {
+      
+      const res = await axios.post("http://localhost:5000/api/register", form);
+      console.log('resp',res)
+      
+      
+      if (res.status === 201) { // Simulate successful registration
+        console.log("Registration successful");
+        router.push("/login"); // Redirect to login
+      }
+    } catch (error) {
+      console.error("Registration failed:", error);
+    }
   };
 
   return (
@@ -26,16 +42,18 @@ const Register = () => {
         <h2 className="text-2xl font-bold text-center mb-6">Register</h2>
         <Input
           type="text"
-          name="username"
-          placeholder="Username"
-          value={form.username}
+          name="name"
+          placeholder="name"
+          value={form.name}
           onChange={handleChange}
           className="mb-4"
+          required
         />
         <Input
           type="email"
           name="email"
           placeholder="Email"
+          required
           value={form.email}
           onChange={handleChange}
           className="mb-4"
@@ -44,6 +62,7 @@ const Register = () => {
           type="password"
           name="password"
           placeholder="Password"
+          required
           value={form.password}
           onChange={handleChange}
           className="mb-6"
@@ -52,7 +71,7 @@ const Register = () => {
           Register
         </Button>
         <p className="mt-4 text-center">
-          Already have an account?{' '}
+          Already have an account?{" "}
           <Link href="/login" className="text-blue-600 hover:underline">
             Login
           </Link>
@@ -63,3 +82,4 @@ const Register = () => {
 };
 
 export default Register;
+
