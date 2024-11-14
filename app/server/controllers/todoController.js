@@ -1,5 +1,5 @@
-// controllers/todoController.js
 const todoService = require('../services/todoServices');
+const userService = require('../services/userService');
 
 class TodoController {
     async create(req, res) {
@@ -23,7 +23,13 @@ class TodoController {
 
     async getAllUserTodos(req, res) {
         try {
-            const todos = await todoService.getUserTodos(req.user.id);
+            const userId = req.user.id;
+            const isAdmin = req.user.role === 'admin';  
+            const todos = await todoService.getUserTodos(userId, isAdmin);
+
+            if (todos.length === 0) {
+                return res.status(404).json({ message: 'No todos found' });
+            }
             res.json(todos);
         } catch (error) {
             res.status(500).json({ message: 'Error retrieving todos' });
@@ -33,11 +39,23 @@ class TodoController {
     async updateTodo(req, res) {
         try {
             const { title, completed } = req.body;
+            const userRole = req.user.role;
+
             if (!title) {
                 return res.status(400).json({ message: 'Fields are required' });
             }
 
-            await todoService.updateTodo(req.params.id, title, completed, req.user.id);
+            // Check user permissions
+            const userPermissions = await userService.getUserPermissions(req.user.id);
+            if (!userPermissions.includes('update_todo')) {
+                return res.status(403).json({ message: 'Permission denied' });
+            }
+
+            // Check if user is admin
+            const isAdmin = userRole === 'admin';
+
+            await todoService.updateTodo(req.params.id, title, completed, req.user.id, isAdmin);
+            // await todoService.updateTodo(req.params.id, title, completed, req.user.id);
             res.json({ message: 'Todo updated successfully' });
         } catch (error) {
             if (error.message === 'Todo not found') {
@@ -46,6 +64,10 @@ class TodoController {
             if (error.message === 'Cannot update a completed todo') {
                 return res.status(400).json({ message: 'Cannot update a completed todo' });
             }
+            if (error.message === 'Not authorized to update this todo') {
+                return res.status(403).json({ message: error.message });
+            }
+            //For unexpected errors
             res.status(500).json({ message: 'Error updating todo' });
         }
     }

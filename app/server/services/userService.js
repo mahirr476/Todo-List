@@ -4,18 +4,25 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 class UserService {
-  async registerUser(name, email, password) {
+
+  async registerUser(name, email, password, role_id = 2) {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const query = "INSERT INTO users (name, password, email) VALUES (?, ?, ?)";
+    const checkEmail = "SELECT id FROM users WHERE email = ?";
+    const query = "INSERT INTO users (name, password, email, role_id) VALUES (?, ?, ?, ?)";
 
-    return new Promise((resolve, reject) => {
-      db.query(query, [name, hashedPassword, email], (err, result) => {
-        if (err) reject(err);
-        resolve(result);
-      });
-    });
+    try {
+      // Check if email already exists
+      const [results] = await db.promise().query(checkEmail, [email]);
+      if (results.length > 0) {
+        throw new Error('Email already registered');
+      }
+
+      await db.promise().query(query, [name, hashedPassword, email, role_id]);
+    } catch (err) {
+      // Ensure the error message aligns with what's expected in the controller
+      throw new Error(err.message || 'Database error');
+    }
   }
-
   async getAllUsers() {
     const query = "SELECT id, name, email FROM users";
 
@@ -30,7 +37,7 @@ class UserService {
   async updateUser(userId, name, email, password) {
     let hashedPassword = password ? await bcrypt.hash(password, 10) : null;
     const query =
-      "UPDATE users SET name = ?, email = ?, password = ? WHERE id = ?";
+      "UPDATE users SET name = ?, email = ?, password = ?, updated_at = NOW() WHERE id = ?";
 
     return new Promise((resolve, reject) => {
       db.query(
@@ -38,7 +45,6 @@ class UserService {
         [name, email || null, hashedPassword, userId],
         (err, result) => {
           if (err) {
-            // Log the error details for debugging purposes
             console.error("Error in query:", err);
             reject(err);
           }
@@ -49,132 +55,79 @@ class UserService {
   }
 
   async loginUser(email, password) {
-    const query = "SELECT * FROM users WHERE email = ?";
+    const query = 'SELECT * FROM users WHERE email = ?';
+    
+    return new Promise((resolve, reject) => {
+        db.query(query, [email], async (err, results) => {
+            if (err) {
+                console.error('Database query error:', err);
+                return reject(new Error('Database query error'));
+            }
+
+            if (results.length === 0) {
+                return reject(new Error('User not found'));
+            }
+
+            const user = results[0];
+            const isMatch = await bcrypt.compare(password, user.password);
+
+            if (!isMatch) {
+                return reject(new Error('Invalid credentials'));
+            }
+
+            // Generating JWT token
+            const token = jwt.sign({ 
+                id: user.id, 
+                role: user.role_id === 1 ? 'admin' : 'user'  // Assuming 1 is admin, 2 is user
+            }, process.env.JWT_SECRET, { expiresIn: '10h' });
+
+            // Returning the token and user object
+            resolve({
+                token,
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role_id === 1 ? 'admin' : 'user',  // Including role in the response
+                }
+            });
+        });
+    });
+}
+
+  async getUserPermissions(userId) {
+    const query = `
+        SELECT permissions.name
+        FROM users
+        JOIN roles ON users.role_id = roles.id
+        JOIN role_permissions ON roles.id = role_permissions.role_id
+        JOIN permissions ON role_permissions.permission_id = permissions.id
+        WHERE users.id = ?`;
 
     return new Promise((resolve, reject) => {
-      db.query(query, [email], async (err, results) => {
-        if (err) reject(err);
-        if (results.length === 0) reject(new Error("User not found"));
-
-        const user = results[0];
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) reject(new Error("Invalid credentials"));
-
-        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-          expiresIn: "2h",
+        db.query(query, [userId], (err, results) => {
+            if (err) reject(err);
+            if (results.length === 0) {
+                reject(new Error('No permissions found for this user'));
+            }
+            const permissions = results.map(result => result.name);
+            resolve(permissions);
         });
-        resolve({ token, user }); // Returning both token and user
-      });
     });
   }
 
-  // async updateUser(userId, name, email, password) {
-  //   let hashedPassword = password ? await bcrypt.hash(password, 10) : null;
-  //   const query =
-  //     "UPDATE users SET name = ?, email = ?, password = ? WHERE id = ?";
+  async getUserRole(userId) {
+    const query = 'SELECT roles.name FROM users JOIN roles ON users.role_id = roles.id WHERE users.id = ?';
+    return new Promise((resolve, reject) => {
+        db.query(query, [userId], (err, results) => {
+            if (err) reject(err);
+            if (results.length === 0) reject(new Error('User not found'));
+            resolve(results[0].name);
+        });
+    });
+}
 
-  //   return new Promise((resolve, reject) => {
-  //     db.query(
-  //       query,
-  //       [name, email || null, hashedPassword, userId],
-  //       (err, result) => {
-  //         if (err) reject(err);
-  //         resolve(result);
-  //       }
-  //     );
-  //   });
-  // }
-  // async updateUser(userId, name, email, password) {
-  //     try {
-  //       // Hash the password if provided
-  //       let hashedPassword = password ? await bcrypt.hash(password, 10) : null;
 
-  //       // SQL query to update user data
-  //       const query =
-  //         "UPDATE users SET name = ?, email = ?, password = ? WHERE id = ?";
-
-  //       // If email is null, we pass the current email value
-  //       // If the email is not provided, we assume we keep the old email.
-  //       const user = await this.getUserById(userId); // Make sure to retrieve the current user info
-  //       const finalEmail = email || user.email; // fallback to current email if email is not provided
-
-  //       return new Promise((resolve, reject) => {
-  //         db.query(
-  //           query,
-  //           [name, finalEmail, hashedPassword || user.password, userId], // update password only if it is provided
-  //           (err, result) => {
-  //             if (err) {
-  //               reject({
-  //                 message: "Error updating user",
-  //                 error: err,
-  //               });
-  //             } else {
-  //               resolve(result);
-  //             }
-  //           }
-  //         );
-  //       });
-  //     } catch (err) {
-  //       throw new Error("Internal Server Error: " + err.message);
-  //     }
-  //   }
-
-  // async loginUser(email, password) {
-  //     const query = 'SELECT * FROM users WHERE email = ?';
-
-  //     return new Promise((resolve, reject) => {
-  //         db.query(query, [email], async (err, results) => {
-  //             if (err) reject(err);
-  //             if (results.length === 0) reject(new Error('User not found'));
-
-  //             const user = results[0];
-  //             const isMatch = await bcrypt.compare(password, user.password);
-  //             if (!isMatch) reject(new Error('Invalid credentials'));
-
-  //             const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '2h' });
-  //             resolve({ token, user });
-  //         });
-  //     });
-  // }
-  //   async loginUser(email, password) {
-  //     const query = "SELECT * FROM users WHERE email = ?";
-
-  //     return new Promise((resolve, reject) => {
-  //       db.query(query, [email], async (err, results) => {
-  //         if (err) return reject(err);
-  //         if (results.length === 0) return reject(new Error("User not found"));
-
-  //         const user = results[0];
-  //         console.log("User fetched:", user);
-
-  //         try {
-  //           const isMatch = await bcrypt.compare(password, user.password);
-  //           if (!isMatch) return reject(new Error("Invalid credentials"));
-
-  //           console.log(
-  //             "JWT_SECRET before token generation:",
-  //             process.env.JWT_SECRET
-  //           );
-
-  //           // Generate token
-  //           const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-  //             expiresIn: "2h",
-  //           });
-
-  //           console.log("Generated token:", token);
-
-  //           if (!token) {
-  //             return reject(new Error("Token generation failed"));
-  //           }
-
-  //           resolve({ token, user });
-  //         } catch (error) {
-  //           console.error("Error during token generation:", error);
-  //           reject(error);
-  //         }
-  //       });
-  //     });
-  //   }
 }
 
 module.exports = new UserService();
